@@ -1,14 +1,16 @@
 const countdown = require("./javascripts/countdown")
+const ipc = require("./javascripts/ipc")
 
 const printTime = (time) => {
-  const seconds = parseInt((time / 1000) % 60)
-  $("#minutes").text(parseInt(time / 60 / 1000))
-  $("#seconds").text(seconds < 10 ? `0${seconds}` : seconds)
+  const seconds = parseInt((time / 1000) % 60);
+  $("#minutes").text(parseInt(time / 60 / 1000));
+  $("#seconds").text(seconds < 10 ? `0${seconds}` : seconds);
+
+  ipc.sendTime(time);
 }
 
 let countdownIsRunning = false;
 
-printTime(countdown.getTime());
 countdown.setPrint(printTime);
 
 $("#toggle-btn").on("click", () => {

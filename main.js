@@ -3,13 +3,26 @@ const path = require('path');
 const url = require('url');
 
 const iconPath = path.join(__dirname, 'icon.png');
+const iconPathOriginal = path.join(__dirname, 'icon_original.png');
+const iconPath100 = path.join(__dirname, 'icon_100.png');
+const iconPath80 = path.join(__dirname, 'icon_80.png');
+const iconPath60 = path.join(__dirname, 'icon_60.png');
+const iconPath40 = path.join(__dirname, 'icon_40.png');
+const iconPath20 = path.join(__dirname, 'icon_20.png');
+
+let selectedIcon = iconPath;
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let win, tray, windowVisible = false;
 
-function loadTray() {
-  var contextMenu = Menu.buildFromTemplate([
+function loadTray(updateIcon = false) {
+  if (updateIcon) {
+    tray.setImage(selectedIcon);
+    return;
+  }
+
+  let contextMenu = Menu.buildFromTemplate([
     {
       label: win.isVisible() ? "Hide Pomodoro" : "Open Pomodoro",
       click: function() {
@@ -46,7 +59,7 @@ function createWindow () {
   win = new BrowserWindow({
     width: 500,
     height: 500,
-    icon: iconPath,
+    icon: iconPathOriginal,
     // show: false,
   })
 
@@ -98,8 +111,32 @@ app.on('activate', () => {
 })
 
 ipcMain.on('asynchronous-message', (event, arg) => {
-  if (arg === "ping") {
-    console.log(arg)  // prints "ping"
-    event.sender.send('asynchronous-reply', 'pong')
-  }
+  try {
+    const seconds = parseInt(Number(arg.split("#")[1]) / 1000)
+
+    if (seconds > 1200 && selectedIcon !== iconPath100) {
+      selectedIcon = iconPath100
+      loadTray(true)
+    } else if (seconds <= 1200 && seconds > 900 && selectedIcon !== iconPath80) {
+      selectedIcon = iconPath80
+      loadTray(true)
+    } else if (seconds <= 900 && seconds > 600 && selectedIcon !== iconPath60) {
+      selectedIcon = iconPath60
+      loadTray(true)
+    } else if (seconds <= 600 && seconds > 300 && selectedIcon !== iconPath40) {
+      selectedIcon = iconPath40
+      loadTray(true)
+    } else if (seconds <= 300 && seconds > 0 && selectedIcon !== iconPath20) {
+      selectedIcon = iconPath20
+      loadTray(true)
+    } else if (seconds <= 0 && selectedIcon !== iconPath) {
+      selectedIcon = iconPath
+      loadTray(true)
+    }
+  } catch (e) {}
+
+  // if (arg === "ping") {
+  //   console.log(arg)  // prints "ping"
+  //   event.sender.send('asynchronous-reply', 'pong')
+  // }
 })
