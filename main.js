@@ -1,16 +1,56 @@
-const { app, BrowserWindow, Menu, Tray } = require('electron')
-const path = require('path')
-const url = require('url')
+const { app, BrowserWindow, Menu, ipcMain, Tray } = require('electron');
+const path = require('path');
+const url = require('url');
 
 const iconPath = path.join(__dirname, 'icon.png');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-let win
+let win, tray, windowVisible = false;
+
+function loadTray() {
+  var contextMenu = Menu.buildFromTemplate([
+    {
+      label: win.isVisible() ? "Hide Pomodoro" : "Open Pomodoro",
+      click: function() {
+        console.log(win.isVisible());
+        win.isVisible() ? win.hide() : win.show()
+      },
+    }, {
+      label: 'Toggle DevTools',
+      accelerator: 'Alt+Command+I',
+      click: function() {
+        win.show();
+        win.toggleDevTools();
+      },
+    }, {
+      label: 'Quit',
+      accelerator: 'Command+Q',
+      selector: 'terminate:',
+      click: function() {
+        app.quit();
+      }
+    }
+  ]);
+
+  if (!tray) {
+    tray = new Tray(iconPath)
+    tray.setToolTip('This is my application.');
+  }
+
+  tray.setContextMenu(contextMenu);
+}
 
 function createWindow () {
   // Create the browser window.
-  win = new BrowserWindow({width: 800, height: 600})
+  win = new BrowserWindow({
+    width: 500,
+    height: 500,
+    icon: iconPath,
+    // show: false,
+  })
+
+  windowVisible = false;
 
   // and load the index.html of the app.
   win.loadURL(url.format({
@@ -19,57 +59,25 @@ function createWindow () {
     slashes: true
   }))
 
-  // Open the DevTools.
-  win.webContents.openDevTools()
-
   // Emitted when the window is closed.
-  win.on('closed', () => {
+  win.on('closed', (e) => {
     // Dereference the window object, usually you would store windows
     // in an array if your app supports multi windows, this is the time
     // when you should delete the corresponding element.
     win = null
   })
+
+  win.on("minimize", (e) => {
+    win.hide()
+  })
+
+  win.on("show", loadTray)
+  win.on("hide", loadTray)
 }
 
-let tray = null
-
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.on('ready', function() {
-  tray = new Tray(iconPath)
-  var contextMenu = Menu.buildFromTemplate([
-    {
-      label: 'Item1',
-      type: 'radio',
-      icon: iconPath
-    }, {
-      label: 'Item2',
-      submenu: [
-        { label: 'submenu1' },
-        { label: 'submenu2' }
-      ]
-    }, {
-      label: 'Item3',
-      type: 'radio',
-      checked: true
-    }, {
-      label: 'Toggle DevTools',
-      accelerator: 'Alt+Command+I',
-      click: function() {
-        win.show();
-        win.toggleDevTools();
-      }
-    }, {
-      label: 'Quit',
-      accelerator: 'Command+Q',
-      selector: 'terminate:',
-    }
-  ]);
-  tray.setToolTip('This is my application.');
-  tray.setContextMenu(contextMenu);
-
   createWindow()
+  loadTray()
 })
 
 // Quit when all windows are closed.
@@ -89,5 +97,9 @@ app.on('activate', () => {
   }
 })
 
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
+ipcMain.on('asynchronous-message', (event, arg) => {
+  if (arg === "ping") {
+    console.log(arg)  // prints "ping"
+    event.sender.send('asynchronous-reply', 'pong')
+  }
+})

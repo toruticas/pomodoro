@@ -1,0 +1,10 @@
+body {
+  background-color: #F44336;
+  text-align: center;
+}
+
+#timer {
+  margin-top: 150px;
+  color: white;
+  font-size: 100px;
+}
